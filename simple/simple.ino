@@ -33,6 +33,10 @@ void loop() {
       vescdata.batteryVoltage = vesc.get_voltage(vesc_packet);
       vescdata.motorCurrent = vesc.get_motor_current(vesc_packet);
       vescdata.ampHours = vesc.get_amphours_discharged(vesc_packet);
+      Serial.printf("Batt: %.1f \n", vescdata.batteryVoltage);
+    }
+    else {
+      Serial.printf("VESC not responding!\n");
     }
   }
 }
