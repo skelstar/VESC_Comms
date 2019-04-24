@@ -21,11 +21,11 @@
 #include <Arduino.h>
 
 // TODO: Make vesc_serial a parameter of init.
-HardwareSerial vesc_serial(2);  // &vesc_serial = Serial1;
+// HardwareSerial vesc_serial(2);  // &vesc_serial = Serial1;
 
 // #include <SoftwareSerial.h>
 
-// SoftwareSerial vesc_serial(16, 17, false, 256);
+SoftwareSerial vesc_serial(RX, TX, false, 256);
 
 
 #define PACKET_GET_VALUES_TYPE 4
@@ -33,7 +33,25 @@ HardwareSerial vesc_serial(2);  // &vesc_serial = Serial1;
 #define PACKET_LENGTH_IDENTIFICATION_BYTE_LONG 3
 #define PACKET_TERMINATION_BYTE 3
 
-uint8_t GET_VALUES_PACKET[] = {0x02, 0x01, 0x04, 0x40, 0x84, 0x03};
+#define START_BYTE  0x02    // short packet, 0x03 for long packet
+#define STOP_BYTE   0x03
+
+uint8_t GET_VALUES_PACKET[] = {
+    START_BYTE, 
+    0x01,   // packet length)
+    0x04,   // payload (probably packet type
+    0x40,   // CRC16
+    0x84,   // CRC16
+    STOP_BYTE
+};
+uint8_t SEND_NUNCHUK_PACKET[] = {
+    START_BYTE, 
+    0x01, 
+    0x04,   // payload
+    0x40,   // CRC16
+    0x84,   // CRC16
+    STOP_BYTE
+};
 
 // CRC code taken and modified from the VESC firmware (https://github.com/vedderb/bldc/blob/master/crc.c).
 // Copyright 2016 Benjamin Vedder <benjamin@vedder.se>.
@@ -95,6 +113,63 @@ void vesc_comms::init(uint32_t baud) {
 uint8_t vesc_comms::fetch_packet(uint8_t *vesc_packet, uint16_t timeout) {
     vesc_serial.write(GET_VALUES_PACKET, sizeof(GET_VALUES_PACKET));
     return receive_packet(vesc_packet, timeout);
+}
+
+int vesc_comms::packSendPayload(uint8_t * payload, int lenPay) {
+
+	uint16_t crcPayload = crc16(payload, lenPay);
+	int count = 0;
+	uint8_t messageSend[256];
+
+	if (lenPay <= 256)
+	{
+		messageSend[count++] = 2;
+		messageSend[count++] = lenPay;
+	}
+	else
+	{
+		messageSend[count++] = 3;
+		messageSend[count++] = (uint8_t)(lenPay >> 8);
+		messageSend[count++] = (uint8_t)(lenPay & 0xFF);
+	}
+
+	memcpy(&messageSend[count], payload, lenPay);
+
+	count += lenPay;
+	messageSend[count++] = (uint8_t)(crcPayload >> 8);
+	messageSend[count++] = (uint8_t)(crcPayload & 0xFF);
+	messageSend[count++] = 3;
+	messageSend[count] = '\0';
+	// Sending package
+	vesc_serial->write(messageSend, count);
+	// Returns number of send bytes
+	return count;
+}
+
+void vesc_comms::setNunchuckValues(int x, int y, bool lowerButton, bool upperButton) {
+	int32_t idx = 0;
+	uint8_t payload[11];
+
+	payload[idx++] = COMM_SET_CHUCK_DATA;
+	payload[idx++] = x;
+	payload[idx++] = y;
+	buffer_append_bool(payload, lowerButton, &idx);
+	buffer_append_bool(payload, upperButton, &idx);
+	// Acceleration Data. Not used, Int16 (2 byte)
+	payload[idx++] = 0;
+	payload[idx++] = 0;
+	payload[idx++] = 0;
+	payload[idx++] = 0;
+	payload[idx++] = 0;
+	payload[idx++] = 0;
+
+	packSendPayload(payload, 11);
+}
+
+void buffer_append_bool(uint8_t *buffer, bool value, int32_t *index) {
+
+    buffer[*index] = value == true ? 1 : 0;
+    (*index)++;
 }
 
 // returns the nyumber of bytes read

@@ -23,6 +23,48 @@
 
 #define PACKET_MAX_LENGTH 70
 
+typedef enum {
+	COMM_FW_VERSION = 0,
+	COMM_JUMP_TO_BOOTLOADER,
+	COMM_ERASE_NEW_APP,
+	COMM_WRITE_NEW_APP_DATA,
+	COMM_GET_VALUES,
+	COMM_SET_DUTY,
+	COMM_SET_CURRENT,
+	COMM_SET_CURRENT_BRAKE,
+	COMM_SET_RPM,
+	COMM_SET_POS,
+	COMM_SET_HANDBRAKE,
+	COMM_SET_DETECT,
+	COMM_SET_SERVO_POS,
+	COMM_SET_MCCONF,
+	COMM_GET_MCCONF,
+	COMM_GET_MCCONF_DEFAULT,
+	COMM_SET_APPCONF,
+	COMM_GET_APPCONF,
+	COMM_GET_APPCONF_DEFAULT,
+	COMM_SAMPLE_PRINT,
+	COMM_TERMINAL_CMD,
+	COMM_PRINT,
+	COMM_ROTOR_POSITION,
+	COMM_EXPERIMENT_SAMPLE,
+	COMM_DETECT_MOTOR_PARAM,
+	COMM_DETECT_MOTOR_R_L,
+	COMM_DETECT_MOTOR_FLUX_LINKAGE,
+	COMM_DETECT_ENCODER,
+	COMM_DETECT_HALL_FOC,
+	COMM_REBOOT,
+	COMM_ALIVE,
+	COMM_GET_DECODED_PPM,
+	COMM_GET_DECODED_ADC,
+	COMM_GET_DECODED_CHUK,
+	COMM_FORWARD_CAN,
+	COMM_SET_CHUCK_DATA,
+	COMM_CUSTOM_APP_DATA,
+	COMM_NRF_START_PAIRING
+} COMM_PACKET_ID;
+
+
 class vesc_comms
 {
     public:
@@ -38,6 +80,7 @@ class vesc_comms
 
         void init(uint32_t baud);
         uint8_t fetch_packet(uint8_t *vesc_packet, uint16_t timeout = 100);
+        void setNunchuckValues(int x, int y, bool lowerButton, bool upperButton);
         float get_temp_mosfet(uint8_t *vesc_packet);
         float get_temp_motor(uint8_t *vesc_packet);
         float get_motor_current(uint8_t *vesc_packet);
@@ -51,6 +94,8 @@ class vesc_comms
         int32_t get_tachometer_abs(uint8_t *vesc_packet);
 
     private:
+        unsigned short crc16(unsigned char *buf, unsigned int len);
+        int packSendPayload(uint8_t * payload, int lenPay);
         uint8_t receive_packet(uint8_t *vesc_packet, uint16_t timeout);
         bool is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length);
         // fault_code get_fault_code(uint8_t *vesc_packet);
