@@ -98,6 +98,8 @@ class vesc_comms
         int packSendPayload(uint8_t * payload, int lenPay);
         uint8_t receive_packet(uint8_t *vesc_packet, uint16_t timeout);
         bool is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length);
+        void buffer_append_bool(uint8_t *buffer, bool value, int32_t *index);
+
         // fault_code get_fault_code(uint8_t *vesc_packet);
         uint8_t expected_packet_length(uint8_t payload_length);
         uint16_t get_word(uint8_t *packet, uint8_t index);

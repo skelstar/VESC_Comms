@@ -141,7 +141,7 @@ int vesc_comms::packSendPayload(uint8_t * payload, int lenPay) {
 	messageSend[count++] = 3;
 	messageSend[count] = '\0';
 	// Sending package
-	vesc_serial->write(messageSend, count);
+	vesc_serial.write(messageSend, count);
 	// Returns number of send bytes
 	return count;
 }
@@ -166,7 +166,7 @@ void vesc_comms::setNunchuckValues(int x, int y, bool lowerButton, bool upperBut
 	packSendPayload(payload, 11);
 }
 
-void buffer_append_bool(uint8_t *buffer, bool value, int32_t *index) {
+void vesc_comms::buffer_append_bool(uint8_t *buffer, bool value, int32_t *index) {
 
     buffer[*index] = value == true ? 1 : 0;
     (*index)++;
