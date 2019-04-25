@@ -21,11 +21,11 @@
 #include <Arduino.h>
 
 // TODO: Make vesc_serial a parameter of init.
-// HardwareSerial vesc_serial(2);  // &vesc_serial = Serial1;
+HardwareSerial vesc_serial(2);  // &vesc_serial = Serial1;
 
 // #include <SoftwareSerial.h>
 
-SoftwareSerial vesc_serial(RX, TX, false, 256);
+// SoftwareSerial vesc_serial(RX, TX, false, 256);
 
 
 #define PACKET_GET_VALUES_TYPE 4

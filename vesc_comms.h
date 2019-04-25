@@ -99,8 +99,6 @@ class vesc_comms
         uint8_t receive_packet(uint8_t *vesc_packet, uint16_t timeout);
         bool is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length);
         // fault_code get_fault_code(uint8_t *vesc_packet);
-
-        unsigned short crc16(unsigned char *buf, unsigned int len);
         uint8_t expected_packet_length(uint8_t payload_length);
         uint16_t get_word(uint8_t *packet, uint8_t index);
         uint32_t get_long(uint8_t *packet, uint8_t index);
