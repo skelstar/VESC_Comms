@@ -167,9 +167,8 @@ void vesc_comms::setNunchuckValues(int x, int y, bool lowerButton, bool upperBut
 }
 
 void vesc_comms::buffer_append_bool(uint8_t *buffer, bool value, int32_t *index) {
-
-    buffer[*index] = value == true ? 1 : 0;
-    (*index)++;
+  buffer[*index] = value == true ? 1 : 0;
+  (*index)++;
 }
 
 // returns the nyumber of bytes read
