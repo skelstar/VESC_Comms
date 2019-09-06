@@ -1,0 +1,13 @@
+  
+{
+  "name": "Vesc_Comms",
+  "keywords": "vesc",
+  "description": "Vesc Comms",
+  "version": "1.0",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/skelstar/VESC_Comms.git"
+  },
+  "frameworks": "arduino"
+}
