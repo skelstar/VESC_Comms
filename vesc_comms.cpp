@@ -21,37 +21,34 @@
 #include <Arduino.h>
 
 // TODO: Make vesc_serial a parameter of init.
-HardwareSerial vesc_serial(2);  // &vesc_serial = Serial1;
+HardwareSerial vesc_serial(2); // &vesc_serial = Serial1;
 
 // #include <SoftwareSerial.h>
 
 // SoftwareSerial vesc_serial(RX, TX, false, 256);
-
 
 #define PACKET_GET_VALUES_TYPE 4
 #define PACKET_LENGTH_IDENTIFICATION_BYTE_SHORT 2
 #define PACKET_LENGTH_IDENTIFICATION_BYTE_LONG 3
 #define PACKET_TERMINATION_BYTE 3
 
-#define START_BYTE  0x02    // short packet, 0x03 for long packet
-#define STOP_BYTE   0x03
+#define START_BYTE 0x02 // short packet, 0x03 for long packet
+#define STOP_BYTE 0x03
 
 uint8_t GET_VALUES_PACKET[] = {
-    START_BYTE, 
-    0x01,   // packet length)
-    0x04,   // payload (probably packet type
-    0x40,   // CRC16
-    0x84,   // CRC16
-    STOP_BYTE
-};
+    START_BYTE,
+    0x01, // packet length)
+    0x04, // payload (probably packet type
+    0x40, // CRC16
+    0x84, // CRC16
+    STOP_BYTE};
 uint8_t SEND_NUNCHUK_PACKET[] = {
-    START_BYTE, 
-    0x01, 
-    0x04,   // payload
-    0x40,   // CRC16
-    0x84,   // CRC16
-    STOP_BYTE
-};
+    START_BYTE,
+    0x01,
+    0x04, // payload
+    0x40, // CRC16
+    0x84, // CRC16
+    STOP_BYTE};
 
 // CRC code taken and modified from the VESC firmware (https://github.com/vedderb/bldc/blob/master/crc.c).
 // Copyright 2016 Benjamin Vedder <benjamin@vedder.se>.
@@ -88,101 +85,111 @@ const unsigned short PROGMEM crc16_tab[] = {
     0x1ad0, 0x2ab3, 0x3a92, 0xfd2e, 0xed0f, 0xdd6c, 0xcd4d, 0xbdaa, 0xad8b,
     0x9de8, 0x8dc9, 0x7c26, 0x6c07, 0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0,
     0x0cc1, 0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
-    0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0 
-};
+    0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0};
 
-unsigned short vesc_comms::crc16(unsigned char *buf, unsigned int len) {
+unsigned short vesc_comms::crc16(unsigned char *buf, unsigned int len)
+{
     unsigned int i;
     unsigned short cksum = 0;
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; i++)
+    {
         cksum = pgm_read_word_near(crc16_tab + (((cksum >> 8) ^ *buf++) & 0xFF)) ^ (cksum << 8);
     }
     return cksum;
 }
 // </VESC CRC code>
 
-uint8_t vesc_comms::expected_packet_length(uint8_t payload_length) {
+uint8_t vesc_comms::expected_packet_length(uint8_t payload_length)
+{
     return (1 + 1 + payload_length + 2 + 1);
 }
 
-void vesc_comms::init(uint32_t baud) {
+void vesc_comms::init(uint32_t baud)
+{
     vesc_serial.begin(baud);
 }
 
 // returns the nyumber of bytes read
-uint8_t vesc_comms::fetch_packet(uint8_t *vesc_packet, uint16_t timeout) {
+uint8_t vesc_comms::fetch_packet(uint8_t *vesc_packet, uint16_t timeout)
+{
     vesc_serial.write(GET_VALUES_PACKET, sizeof(GET_VALUES_PACKET));
     return receive_packet(vesc_packet, timeout);
 }
 
-int vesc_comms::packSendPayload(uint8_t * payload, int lenPay) {
+int vesc_comms::packSendPayload(uint8_t *payload, int lenPay)
+{
 
-	uint16_t crcPayload = crc16(payload, lenPay);
-	int count = 0;
-	uint8_t messageSend[256];
+    uint16_t crcPayload = crc16(payload, lenPay);
+    int count = 0;
+    uint8_t messageSend[256];
 
-	if (lenPay <= 256)
-	{
-		messageSend[count++] = 2;
-		messageSend[count++] = lenPay;
-	}
-	else
-	{
-		messageSend[count++] = 3;
-		messageSend[count++] = (uint8_t)(lenPay >> 8);
-		messageSend[count++] = (uint8_t)(lenPay & 0xFF);
-	}
+    if (lenPay <= 256)
+    {
+        messageSend[count++] = 2;
+        messageSend[count++] = lenPay;
+    }
+    else
+    {
+        messageSend[count++] = 3;
+        messageSend[count++] = (uint8_t)(lenPay >> 8);
+        messageSend[count++] = (uint8_t)(lenPay & 0xFF);
+    }
 
-	memcpy(&messageSend[count], payload, lenPay);
+    memcpy(&messageSend[count], payload, lenPay);
 
-	count += lenPay;
-	messageSend[count++] = (uint8_t)(crcPayload >> 8);
-	messageSend[count++] = (uint8_t)(crcPayload & 0xFF);
-	messageSend[count++] = 3;
-	messageSend[count] = '\0';
-	// Sending package
-	vesc_serial.write(messageSend, count);
-	// Returns number of send bytes
-	return count;
+    count += lenPay;
+    messageSend[count++] = (uint8_t)(crcPayload >> 8);
+    messageSend[count++] = (uint8_t)(crcPayload & 0xFF);
+    messageSend[count++] = 3;
+    messageSend[count] = '\0';
+    // Sending package
+    vesc_serial.write(messageSend, count);
+    // Returns number of send bytes
+    return count;
 }
 
-void vesc_comms::setNunchuckValues(int x, int y, bool lowerButton, bool upperButton) {
-	int32_t idx = 0;
-	uint8_t payload[11];
+void vesc_comms::setNunchuckValues(int x, int y, bool lowerButton, bool upperButton)
+{
+    int32_t idx = 0;
+    uint8_t payload[11];
 
-	payload[idx++] = COMM_SET_CHUCK_DATA;
-	payload[idx++] = x;
-	payload[idx++] = y;
-	buffer_append_bool(payload, lowerButton, &idx);
-	buffer_append_bool(payload, upperButton, &idx);
-	// Acceleration Data. Not used, Int16 (2 byte)
-	payload[idx++] = 0;
-	payload[idx++] = 0;
-	payload[idx++] = 0;
-	payload[idx++] = 0;
-	payload[idx++] = 0;
-	payload[idx++] = 0;
+    payload[idx++] = COMM_SET_CHUCK_DATA;
+    payload[idx++] = x;
+    payload[idx++] = y;
+    buffer_append_bool(payload, lowerButton, &idx);
+    buffer_append_bool(payload, upperButton, &idx);
+    // Acceleration Data. Not used, Int16 (2 byte)
+    payload[idx++] = 0;
+    payload[idx++] = 0;
+    payload[idx++] = 0;
+    payload[idx++] = 0;
+    payload[idx++] = 0;
+    payload[idx++] = 0;
 
-	packSendPayload(payload, 11);
+    packSendPayload(payload, 11);
 }
 
-void vesc_comms::buffer_append_bool(uint8_t *buffer, bool value, int32_t *index) {
-  buffer[*index] = value == true ? 1 : 0;
-  (*index)++;
+void vesc_comms::buffer_append_bool(uint8_t *buffer, bool value, int32_t *index)
+{
+    buffer[*index] = value == true ? 1 : 0;
+    (*index)++;
 }
 
 // returns the nyumber of bytes read
-uint8_t vesc_comms::receive_packet(uint8_t *vesc_packet, uint16_t timeout) {
+uint8_t vesc_comms::receive_packet(uint8_t *vesc_packet, uint16_t timeout)
+{
     int32_t start = millis();
     uint8_t bytes_read = 0;
-    while (millis() - start < timeout) {
+    while (millis() - start < timeout)
+    {
         if (vesc_serial.available())
             vesc_packet[bytes_read++] = vesc_serial.read();
 
         if (bytes_read >= PACKET_MAX_LENGTH)
             break;
 
-        if (bytes_read >= 2 && vesc_packet[0] != PACKET_LENGTH_IDENTIFICATION_BYTE_SHORT) {
+        if (bytes_read >= 2 && vesc_packet[0] != PACKET_LENGTH_IDENTIFICATION_BYTE_SHORT)
+        {
             uint8_t payload_length = vesc_packet[1];
             if (bytes_read >= expected_packet_length(payload_length))
                 break;
@@ -190,44 +197,52 @@ uint8_t vesc_comms::receive_packet(uint8_t *vesc_packet, uint16_t timeout) {
         yield();
     }
     // read any left-over bytes without storing
-    while (vesc_serial.available()) {
+    while (vesc_serial.available())
+    {
         // TODO: warning
         vesc_serial.read();
     }
     return bytes_read;
 }
 
-uint16_t vesc_comms::get_word(uint8_t *packet, uint8_t index) {
-    return ((uint16_t) packet[index]) << 8 | ((uint16_t) packet[index + 1]);
+uint16_t vesc_comms::get_word(uint8_t *packet, uint8_t index)
+{
+    return ((uint16_t)packet[index]) << 8 | ((uint16_t)packet[index + 1]);
 }
 
-uint32_t vesc_comms::get_long(uint8_t *packet, uint8_t index) {
-    return ((uint32_t) packet[index]) << 24 |
-           ((uint32_t) packet[index + 1]) << 16 |
-           ((uint32_t) packet[index + 2]) << 8 |
-           ((uint32_t) packet[index + 3]);
+uint32_t vesc_comms::get_long(uint8_t *packet, uint8_t index)
+{
+    return ((uint32_t)packet[index]) << 24 |
+           ((uint32_t)packet[index + 1]) << 16 |
+           ((uint32_t)packet[index + 2]) << 8 |
+           ((uint32_t)packet[index + 3]);
 }
 
-bool vesc_comms::is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length) {
-    if (packet_length < 3) {
+bool vesc_comms::is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length)
+{
+    if (packet_length < 3)
+    {
         //D("packet too short (" + String(packet_length) + " bytes)");
         return false;
     }
 
-    if (vesc_packet[0] != PACKET_LENGTH_IDENTIFICATION_BYTE_SHORT) {
+    if (vesc_packet[0] != PACKET_LENGTH_IDENTIFICATION_BYTE_SHORT)
+    {
         //D("unexpected length id byte: expected " + String(PACKET_LENGTH_IDENTIFICATION_BYTE_SHORT) +
-          //", got " + String(vesc_packet[0]));
+        //", got " + String(vesc_packet[0]));
         return false;
     }
 
-    if (vesc_packet[2] != PACKET_GET_VALUES_TYPE) {
+    if (vesc_packet[2] != PACKET_GET_VALUES_TYPE)
+    {
         //D("unexpected packet type: expected " + String(PACKET_GET_VALUES_TYPE) +
         //   ", got " + String(vesc_packet[2]));
         return false;
     }
 
     uint8_t payload_length = vesc_packet[1];
-    if (packet_length != expected_packet_length(payload_length)) {
+    if (packet_length != expected_packet_length(payload_length))
+    {
         // D("packet length (" + String(payload_length) + ") does not correspond to the payload length (" +
         //   String(payload_length) + ")");
         return false;
@@ -235,7 +250,8 @@ bool vesc_comms::is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length)
 
     uint16_t crc = get_word(vesc_packet, payload_length + 2);
     uint16_t expected_crc = crc16(&vesc_packet[2], payload_length);
-    if (crc != expected_crc) {
+    if (crc != expected_crc)
+    {
         // D("CRC error: expected " + String(expected_crc) + ", got " + String(crc));
         return false;
     }
@@ -243,49 +259,94 @@ bool vesc_comms::is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length)
     return true;
 }
 
-float vesc_comms::get_temp_mosfet(uint8_t *vesc_packet) {
-    return ((int16_t) get_word(vesc_packet, 3)) / 10.0;
+float vesc_comms::get_temp_mosfet(uint8_t *vesc_packet)
+{
+    return ((int16_t)get_word(vesc_packet, 3)) / 10.0;
 }
 
-float vesc_comms::get_temp_motor(uint8_t *vesc_packet) {
-    return ((int16_t) get_word(vesc_packet, 5)) / 10.0;
+float vesc_comms::get_temp_motor(uint8_t *vesc_packet)
+{
+    return ((int16_t)get_word(vesc_packet, 5)) / 10.0;
 }
 
-float vesc_comms::get_motor_current(uint8_t *vesc_packet) {
-    return ((int32_t) get_long(vesc_packet, 7)) / 100.0;
+float vesc_comms::get_motor_current(uint8_t *vesc_packet)
+{
+    return ((int32_t)get_long(vesc_packet, 7)) / 100.0;
 }
 
-float vesc_comms::get_battery_current(uint8_t *vesc_packet) {
-    return ((int32_t) get_long(vesc_packet, 11)) / 100.0;
+float vesc_comms::get_battery_current(uint8_t *vesc_packet)
+{
+    return ((int32_t)get_long(vesc_packet, 11)) / 100.0;
 }
 
-float vesc_comms::get_duty_cycle(uint8_t *vesc_packet) {
+float vesc_comms::get_duty_cycle(uint8_t *vesc_packet)
+{
     return get_word(vesc_packet, 23) / 1000.0;
 }
 
-int32_t vesc_comms::get_rpm(uint8_t *vesc_packet) {
+int32_t vesc_comms::get_rpm(uint8_t *vesc_packet)
+{
     return get_long(vesc_packet, 25);
 }
 
-float vesc_comms::get_voltage(uint8_t *vesc_packet) {
+float vesc_comms::get_voltage(uint8_t *vesc_packet)
+{
     return get_word(vesc_packet, 29) / 10.0;
 }
 
-float vesc_comms::get_amphours_discharged(uint8_t *vesc_packet) {
+float vesc_comms::get_amphours_discharged(uint8_t *vesc_packet)
+{
     return get_long(vesc_packet, 31) / 10.0;
 }
 
-float vesc_comms::get_amphours_charged(uint8_t *vesc_packet) {
+float vesc_comms::get_amphours_charged(uint8_t *vesc_packet)
+{
     return get_long(vesc_packet, 35) / 10.0;
 }
 
-int32_t vesc_comms::get_tachometer(uint8_t *vesc_packet) {
+int32_t vesc_comms::get_tachometer(uint8_t *vesc_packet)
+{
     return get_long(vesc_packet, 47);
 }
 
-int32_t vesc_comms::get_tachometer_abs(uint8_t *vesc_packet) {
+int32_t vesc_comms::get_tachometer_abs(uint8_t *vesc_packet)
+{
     return get_long(vesc_packet, 51);
 }
+
+void VescUart::setCurrent(float current)
+{
+    int32_t index = 0;
+    uint8_t payload[5];
+
+    payload[index++] = COMM_SET_CURRENT;
+    buffer_append_int32(payload, (int32_t)(current * 1000), &index);
+
+    packSendPayload(payload, 5);
+}
+
+void VescUart::setBrakeCurrent(float brakeCurrent)
+{
+    int32_t index = 0;
+    uint8_t payload[5];
+
+    payload[index++] = COMM_SET_CURRENT_BRAKE;
+    buffer_append_int32(payload, (int32_t)(brakeCurrent * 1000), &index);
+
+    packSendPayload(payload, 5);
+}
+
+void VescUart::setRPM(float rpm)
+{
+	int32_t index = 0;
+	uint8_t payload[5];
+
+	payload[index++] = COMM_SET_RPM;
+	buffer_append_int32(payload, (int32_t)(rpm), &index);
+
+	packSendPayload(payload, 5);
+}
+
 
 // fault_code get_fault_code(uint8_t *vesc_packet) {
 //     return vesc_packet[55];

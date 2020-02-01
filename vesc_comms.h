@@ -93,16 +93,8 @@ class vesc_comms
         int32_t get_tachometer(uint8_t *vesc_packet);
         int32_t get_tachometer_abs(uint8_t *vesc_packet);
 
-    private:
-        unsigned short crc16(unsigned char *buf, unsigned int len);
-        int packSendPayload(uint8_t * payload, int lenPay);
-        uint8_t receive_packet(uint8_t *vesc_packet, uint16_t timeout);
-        bool is_expected_packet(uint8_t *vesc_packet, uint8_t packet_length);
-        void buffer_append_bool(uint8_t *buffer, bool value, int32_t *index);
+        void setCurrent(float current);
+        void setBrakeCurrent(float brakeCurrent);
+        void setRPM(float rpm);
 
-        // fault_code get_fault_code(uint8_t *vesc_packet);
-        uint8_t expected_packet_length(uint8_t payload_length);
-        uint16_t get_word(uint8_t *packet, uint8_t index);
-        uint32_t get_long(uint8_t *packet, uint8_t index);
-};
 #endif //vesc_comms_h
