@@ -314,7 +314,23 @@ int32_t vesc_comms::get_tachometer_abs(uint8_t *vesc_packet)
     return get_long(vesc_packet, 51);
 }
 
-void VescUart::setCurrent(float current)
+void vesc_comms::buffer_append_int32(uint8_t *buffer, int32_t number, int32_t *index)
+{
+    buffer[(*index)++] = number >> 24;
+    buffer[(*index)++] = number >> 16;
+    buffer[(*index)++] = number >> 8;
+    buffer[(*index)++] = number;
+}
+
+void vesc_comms::buffer_append_uint32(uint8_t *buffer, uint32_t number, int32_t *index)
+{
+    buffer[(*index)++] = number >> 24;
+    buffer[(*index)++] = number >> 16;
+    buffer[(*index)++] = number >> 8;
+    buffer[(*index)++] = number;
+}
+
+void vesc_comms::setCurrent(float current)
 {
     int32_t index = 0;
     uint8_t payload[5];
@@ -325,7 +341,7 @@ void VescUart::setCurrent(float current)
     packSendPayload(payload, 5);
 }
 
-void VescUart::setBrakeCurrent(float brakeCurrent)
+void vesc_comms::setBrakeCurrent(float brakeCurrent)
 {
     int32_t index = 0;
     uint8_t payload[5];
@@ -336,17 +352,16 @@ void VescUart::setBrakeCurrent(float brakeCurrent)
     packSendPayload(payload, 5);
 }
 
-void VescUart::setRPM(float rpm)
+void vesc_comms::setRPM(float rpm)
 {
-	int32_t index = 0;
-	uint8_t payload[5];
+    int32_t index = 0;
+    uint8_t payload[5];
 
-	payload[index++] = COMM_SET_RPM;
-	buffer_append_int32(payload, (int32_t)(rpm), &index);
+    payload[index++] = COMM_SET_RPM;
+    buffer_append_int32(payload, (int32_t)(rpm), &index);
 
-	packSendPayload(payload, 5);
+    packSendPayload(payload, 5);
 }
-
 
 // fault_code get_fault_code(uint8_t *vesc_packet) {
 //     return vesc_packet[55];
